@@ -145,8 +145,46 @@ def evaluate(args):
         model.to(device)
 
     # Use whatever metric was listed in the paper
-    # Then save the predictions to a file
-    pass
+
+    val_data = SemanticDataset(args.val_dir, tokenizer)
+    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
+    
+    pbar = tqdm(val_loader)
+    pbar.set_description("validation loop")
+
+    exact_match_metric = load("exact_match")
+    
+
+    predictions = []
+    labels = []
+
+    outputs = []
+    with open('predictions.json', 'w') as f:
+        # save the predictions to a file
+        for text, label in pbar:
+            
+            input_ids = tokenizer(text, return_tensors="pt").input_ids.to(device)
+            label_ids = tokenizer(label, return_tensors="pt").input_ids.to(device)
+            generated_ids = model.generate(input_ids, max_length=2048)
+
+            generated_text = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+
+            outputs.append({
+                'text': text,
+                'label': label,
+                'generated': generated_text
+            })
+
+            predictions.append(generated_ids)
+            labels.append(label_ids)
+
+            json_object = json.dumps(outputs)
+            f.write(json_object)
+            f.write('\n')
+
+    #return exact match 
+    results = exact_match_metric.compute(predictions=predictions, references=references)
+    return results
 
 if __name__ == "__main__":
     main()
