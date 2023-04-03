@@ -135,7 +135,7 @@ def train(args):
         print(f"Test Loss: {test_loss_sum / len(test_loader)}")
 
 
-def evaluate(args):
+def evaluate_fn(args):
     device = torch.device("cuda" if args.cuda else "cpu")
     # Load the model
     if args.checkpoint_dir is not None:
