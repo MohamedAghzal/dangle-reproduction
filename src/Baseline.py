@@ -183,7 +183,7 @@ def evaluate_fn(args):
             f.write('\n')
 
     #return exact match 
-    results = exact_match_metric.compute(predictions=predictions, references=references)
+    results = exact_match_metric.compute(predictions=predictions, references=labels)
     return results
 
 if __name__ == "__main__":
