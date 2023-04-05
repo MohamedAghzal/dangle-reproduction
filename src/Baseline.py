@@ -43,7 +43,7 @@ def main():
     train_parser.add_argument("--cuda", action="store_true")
 
     eval_parser = subparsers.add_parser("evaluate")
-    eval_parser.set_defaults(command=evaluate)
+    eval_parser.set_defaults(command=evaluate_fn)
     eval_parser.add_argument("--test_dir", type=str, default=None)
     eval_parser.add_argument("--checkpoint_dir", type=str, default=None)
     eval_parser.add_argument("--predictions_dir", type=str, default=None)
