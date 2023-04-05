@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import os
 from tqdm import tqdm
+import evaluate
 
 class SemanticDataset(Dataset):
  
@@ -38,7 +39,7 @@ def main():
     train_parser.add_argument("--T5_modelname", type=str, default="t5-base")
     train_parser.add_argument("--batch_size", type=int, default=8)
     train_parser.add_argument("--epochs", type=int, default=10)
-    train_parser.add_argument("--learning_rate", "--lr", type=float, default=0.001)
+    train_parser.add_argument("--learning_rate", "--lr", type=float, default=2e-4)
     train_parser.add_argument("--save_dir", type=str, default=None)
     train_parser.add_argument("--cuda", action="store_true")
 
@@ -53,6 +54,7 @@ def main():
     args.command(args)
 
 def train(args):
+    print("Training with the following arguments: ", args)
 
     tokenizer = T5Tokenizer.from_pretrained(args.T5_modelname, model_max_length=512)
     model = T5ForConditionalGeneration.from_pretrained(args.T5_modelname)
@@ -90,6 +92,7 @@ def train(args):
                                 ))
             optimizer.step()
             optimizer.zero_grad()
+        print(f"Training Loss: {loss_sum / len(train_loader)}")
 
         # Evaluate the model
         model.eval()
@@ -150,13 +153,13 @@ def evaluate_fn(args):
 
     # Use whatever metric was listed in the paper
 
-    val_data = SemanticDataset(args.val_dir, tokenizer)
-    val_loader = DataLoader(val_data, batch_size=args.batch_size, shuffle=True)
+    test_data = SemanticDataset(args.test_dir, tokenizer)
+    test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
     
-    pbar = tqdm(val_loader)
-    pbar.set_description("validation loop")
+    pbar = tqdm(test_loader)
+    pbar.set_description("Evaluation")
 
-    exact_match_metric = load("exact_match")
+    exact_match_metric = evaluate.load("exact_match")
     
 
     predictions = []
