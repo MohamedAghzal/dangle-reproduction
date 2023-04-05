@@ -12,19 +12,18 @@ class SemanticDataset(Dataset):
     def __init__(self, file_name, tokenizer, max_len=512):
         df = pd.read_csv(file_name, sep="\t", names=["text", "label", "sem_type"])
 
-        text = df["text"].values
-        labels = df["label"].values
-        text_ids = tokenizer.batch_encode_plus(text, max_length=max_len, padding='max_length', return_tensors="pt")
-        label_ids = tokenizer.batch_encode_plus(labels, max_length=max_len, padding='max_length', return_tensors="pt")
-
-        self.x_train=torch.tensor(text_ids, dtype=torch.float32)
-        self.y_train=torch.tensor(label_ids,dtype=torch.float32)
+        text = list(df["text"].values)
+        labels = list(df["label"].values)
+        text_encoding = tokenizer(text, truncation=True, padding=True)
+        label_encoding = tokenizer(labels, truncation=True, padding=True)
+        self.text_ids = torch.tensor(list(text_encoding.values()), dtype=torch.int64)[0]
+        self.label_ids = torch.tensor(list(label_encoding.values()), dtype=torch.int64)[0]
 
     def __len__(self):
-        return len(self.y_train)
+        return len(self.label_ids)
 
     def __getitem__(self,idx):
-        return self.x_train[idx],self.y_train[idx]
+        return self.text_ids[idx], self.label_ids[idx]
 
 def main():
     import argparse
@@ -32,6 +31,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
     
     train_parser = subparsers.add_parser("train")
+    train_parser.set_defaults(command=train)
     train_parser.add_argument("--train_dir", type=str, default=None)
     train_parser.add_argument("--val_dir", type=str, default=None)
     train_parser.add_argument("--test_dir", type=str, default=None)
@@ -43,10 +43,11 @@ def main():
     train_parser.add_argument("--cuda", action="store_true")
 
     eval_parser = subparsers.add_parser("evaluate")
+    eval_parser.set_defaults(command=evaluate)
     eval_parser.add_argument("--test_dir", type=str, default=None)
     eval_parser.add_argument("--checkpoint_dir", type=str, default=None)
     eval_parser.add_argument("--predictions_dir", type=str, default=None)
-    train_parser.add_argument("--cuda", action="store_true")
+    eval_parser.add_argument("--cuda", action="store_true")
 
     args = parser.parse_args()
     args.command(args)
@@ -57,7 +58,7 @@ def train(args):
     model = T5ForConditionalGeneration.from_pretrained(args.T5_modelname)
     model.resize_token_embeddings(len(tokenizer))
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if args.cuda else "cpu")
     model.to(device)
 
     optimizer = torch.optim.Adam(params=model.parameters(), lr=args.learning_rate)
@@ -83,7 +84,10 @@ def train(args):
             loss = outputs.loss
             loss.backward()
             loss_sum += loss.item()
-            pbar.set_postfix(f"Loss: {loss.item()}, Avg Loss: {loss_sum / (step + 1)}")
+            pbar.set_postfix(dict(
+                                Loss=loss.item(),
+                                Avg_Loss=loss_sum / (step + 1)
+                                ))
             optimizer.step()
             optimizer.zero_grad()
 
