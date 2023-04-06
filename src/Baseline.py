@@ -7,6 +7,7 @@ import numpy as np
 import os
 from tqdm import tqdm
 import evaluate
+import json
 
 class SemanticDataset(Dataset):
  
@@ -48,6 +49,7 @@ def main():
     eval_parser.add_argument("--test_dir", type=str, default=None)
     eval_parser.add_argument("--checkpoint_dir", type=str, default=None)
     eval_parser.add_argument("--predictions_dir", type=str, default=None)
+    eval_parser.add_argument("--batch_size", type=int, default=8)
     eval_parser.add_argument("--cuda", action="store_true")
 
     args = parser.parse_args()
@@ -167,21 +169,24 @@ def evaluate_fn(args):
     labels = []
 
     outputs = []
+    # Probably should add use predictions directory arg here so we aren't writing this file in the src dir
     with open('predictions.json', 'w') as f:
         # save the predictions to a file
-        for text, label in pbar:
-            
-            input_ids = tokenizer(text, return_tensors="pt").input_ids.to(device)
-            label_ids = tokenizer(label, return_tensors="pt").input_ids.to(device)
+        for input_ids, label_ids in pbar:
+            texts = tokenizer.batch_decode(input_ids, skip_special_tokens=True)
+            labels = tokenizer.batch_decode(label_ids, skip_special_tokens=True)
+            input_ids = input_ids.to(device)
+            label_ids = label_ids.to(device)
             generated_ids = model.generate(input_ids, max_length=2048)
 
-            generated_text = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+            generated_texts = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
 
-            outputs.append({
-                'text': text,
-                'label': label,
-                'generated': generated_text
-            })
+            for text, label, generated_text in zip(texts, labels, generated_texts):
+                outputs.append({
+                    'text': text,
+                    'label': label,
+                    'generated': generated_text
+                })
 
             predictions.append(generated_ids)
             labels.append(label_ids)
