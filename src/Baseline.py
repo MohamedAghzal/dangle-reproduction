@@ -166,7 +166,7 @@ def evaluate_fn(args):
     
 
     predictions = []
-    labels = []
+    true_labels = []
 
     outputs = []
     # Probably should add use predictions directory arg here so we aren't writing this file in the src dir
@@ -188,16 +188,16 @@ def evaluate_fn(args):
                     'generated': generated_text
                 })
 
-            predictions.append(generated_ids)
-            labels.append(label_ids)
+                predictions.append(generated_text)
+                true_labels.append(label)
 
             json_object = json.dumps(outputs)
             f.write(json_object)
             f.write('\n')
 
-    #return exact match 
-    results = exact_match_metric.compute(predictions=predictions, references=labels)
-    return results
+    #prints exact match 
+    results = exact_match_metric.compute(predictions=predictions, references=true_labels)
+    print("Exact Match Accuracy: ", results['exact_match'])
 
 if __name__ == "__main__":
     main()
