@@ -76,6 +76,7 @@ def train(args):
 
     # Train the model
     for epoch in range(args.epochs):
+        print("Epoch: ", epoch)
         pbar = tqdm(train_loader)
         pbar.set_description(f"Train | Epoch {epoch}")
         loss_sum = 0
