@@ -9,7 +9,7 @@ def translate_nl(file_name):
     languages = ['fr', 'es', 'ar', 'de', 'en', 'ja']
 
     df = pd.read_csv(
-        os.path.join(os.path.dirname(__file__), file_name), 
+        os.path.join(file_name), 
         delimiter='\t', 
         names=["text", "label", "sem_type"]
     )
@@ -37,5 +37,10 @@ def translate_nl(file_name):
 
 
 train_translated = translate_nl("../data/test.tsv")
-train_translated.to_csv(os.path.dirname(__file__), "../data/test_translated.tsv", sep="\t")
+train_translated.to_csv("../data/test_translated.tsv", sep="\t")
 
+train_translated = translate_nl("../data/dev.tsv")
+train_translated.to_csv("../data/dev_translated.tsv", sep="\t")
+
+train_translated = translate_nl("../data/train.tsv")
+train_translated.to_csv("../data/train_translated.tsv", sep="\t")
