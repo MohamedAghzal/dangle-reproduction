@@ -14,7 +14,7 @@ class SemanticDataset(Dataset):
  
     def __init__(self, file_name, tokenizer, max_len=512):
         df = pd.read_csv(file_name, sep="\t", names=["text", "label", "sem_type"])
-
+        
         text = list(df["text"].values)
         labels = list(df["label"].values)
         text_encoding = tokenizer(text, truncation=True, padding=True)
@@ -29,20 +29,22 @@ class SemanticDataset(Dataset):
         return self.text_ids[idx], self.label_ids[idx]
 
 class Dangle_Model(nn.Module):
-    def __init__(self, T5_modelname, tokenizer, max_len=512):
-        super.__init__()
+    def __init__(self, T5_modelname, tokenizer, device, max_len=512):
+        super().__init__()
         self.model = T5ForConditionalGeneration.from_pretrained(T5_modelname)
         self.model.resize_token_embeddings(len(tokenizer))
         self.max_len = max_len
         tokenizer.add_special_tokens({'sep_token':'<s>'})
         self.tokenizer = tokenizer
+        self.device = device
+        self.model.to(device)
     
     def save_checkpoint(self, save_dir):
         self.model.save_pretrained(save_dir)
     
     def generate(self, input_ids):
         # Put sep_token at the end of the input_ids
-        input_ids = torch.cat([input_ids, torch.tensor([self.tokenizer.sep_token_id]).repeat([input_ids.shape[0], 1])], dim=-1)
+        input_ids = torch.cat([input_ids, torch.tensor([self.tokenizer.sep_token_id]).repeat([input_ids.shape[0], 1]).to(self.device)], dim=-1)
         target_offset = input_ids.shape[1]
         current_target_len = 1
         total_target_len = self.max_len
@@ -58,20 +60,30 @@ class Dangle_Model(nn.Module):
         return input_ids[:, target_offset:]
     
     def forward(self, input_ids, labels):
+        print("Input Ids: ", input_ids.shape)
+        print("Labels: ", labels.shape)
         # Put sep_token at the end of the input_ids
-        input_ids = torch.cat([input_ids, torch.tensor([self.tokenizer.sep_token_id]).repeat([input_ids.shape[0], 1])], dim=-1)
+        input_ids = torch.cat([input_ids, torch.tensor([self.tokenizer.sep_token_id]).repeat([input_ids.shape[0], 1]).to(self.device)], dim=-1)
+        print("Input Ids after concat: ", input_ids.shape)
         current_target_len = 1
         total_target_len = labels.shape[1]
+        print("Labels going in: ", labels[:, :current_target_len].shape)
         model_out = self.model(input_ids=input_ids, labels=labels[:, :current_target_len])
+        print("Model ran.")
         loss = model_out.loss
+        print("Loss: ", loss)
         # Add the next generated token to the input
         input_ids = torch.cat([input_ids, model_out.logits.argmax(dim=-1)[:, current_target_len].unsqueeze(-1)], dim=-1)
+        print("Updated Input Ids: ", input_ids.shape)
         current_target_len += 1
         while current_target_len <= total_target_len:
             # Repeat until we have generated the label hopefully
+            print("Labels going in: ", labels[:, :current_target_len].shape)
             model_out = self.model(input_ids=input_ids, labels=labels[:, :current_target_len])
             loss = torch.add(loss, model_out.loss)
+            print("Loss: ", loss)
             input_ids = torch.cat([input_ids, model_out.logits.argmax(dim=-1)[:, current_target_len].unsqueeze(-1)], dim=-1)
+            print("Updated Input Ids: ", input_ids.shape)
             current_target_len += 1
         return {'loss': loss, 'logits': model_out.logits}
 
@@ -105,11 +117,10 @@ def main():
 
 def train(args):
     print("Training with the following arguments: ", args)
-
-    tokenizer = T5Tokenizer.from_pretrained(args.T5_modelname, model_max_length=512)
-    model = Dangle_Model(args.T5_modelname, tokenizer)
-
     device = torch.device("cuda" if args.cuda else "cpu")
+    tokenizer = T5Tokenizer.from_pretrained(args.T5_modelname, model_max_length=512)
+    model = Dangle_Model(args.T5_modelname, tokenizer, device)
+
     model.to(device)
 
     optimizer = torch.optim.Adam(params=model.parameters(), lr=args.learning_rate)
@@ -196,7 +207,7 @@ def evaluate_fn(args):
     # Load the model
     if args.checkpoint_dir is not None:
         tokenizer = T5Tokenizer.from_pretrained(args.checkpoint_dir)
-        model = Dangle_Model(args.checkpoint_dir, tokenizer)
+        model = Dangle_Model(args.checkpoint_dir, tokenizer, device)
         model.to(device)
 
     # Use whatever metric was listed in the paper

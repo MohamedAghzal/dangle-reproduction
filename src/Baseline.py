@@ -169,7 +169,6 @@ def evaluate_fn(args):
     true_labels = []
 
     outputs = []
-    # Probably should add use predictions directory arg here so we aren't writing this file in the src dir
     with open('predictions.json', 'w') as f:
         # save the predictions to a file
         for input_ids, label_ids in pbar:
@@ -180,7 +179,7 @@ def evaluate_fn(args):
             generated_ids = model.generate(input_ids, max_length=2048)
 
             generated_texts = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
-
+            
             for text, label, generated_text in zip(texts, labels, generated_texts):
                 outputs.append({
                     'text': text,
