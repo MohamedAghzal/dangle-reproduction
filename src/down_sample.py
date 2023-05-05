@@ -19,6 +19,7 @@ def new_data(filename):
     return pd.DataFrame(data, columns=["text", "label", "sem_type", "language"])
 
 if __name__ == "__main__":
-    new_data("../data/dev_translated.tsv").to_csv("../data/dev_translated_trimmed.tsv", sep="\t")
-    new_data("../data/test_translated.tsv").to_csv("../data/test_translated_trimmed.tsv", sep="\t")
-    new_data("../data/train_translated.tsv").to_csv("../data/train_translated_trimmed.tsv", sep="\t")
+    # new_data("../data/dev_translated.tsv").to_csv("../data/dev_translated_trimmed.tsv", sep="\t")
+    # new_data("../data/test_translated.tsv").to_csv("../data/test_translated_trimmed.tsv", sep="\t")
+    # new_data("../data/train_translated.tsv").to_csv("../data/train_translated_trimmed.tsv", sep="\t")
+    new_data("../data/gen_translated.tsv").to_csv("../data/gen_translated_trimmed.tsv", sep="\t")

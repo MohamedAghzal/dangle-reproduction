@@ -53,5 +53,6 @@ if __name__ == "__main__":
     # train_translated = translate_nl("../data/dev.tsv")
     # train_translated.to_csv("../data/dev_translated.tsv", sep="\t")
 
-    train_translated = translate_nl("../data/gen.tsv")
-    train_translated.to_csv("../data/gen_translated.tsv", sep="\t")
+    print("Calling translation function for train data...")
+    train_translated = translate_nl("../data/train.tsv")
+    train_translated.to_csv("../data/train_translated.tsv", sep="\t")
