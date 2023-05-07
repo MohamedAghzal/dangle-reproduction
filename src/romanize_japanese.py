@@ -3,8 +3,9 @@ import cutlet
 from tqdm import tqdm
 katsu = cutlet.Cutlet()
 katsu.use_foreign_spelling = False
-new_data = []
+
 for filename in os.listdir('../data'):
+    new_data = []
     if "translated" in filename:
         print("Romanizing ", filename, "...")
         with open('../data/' + filename, 'r', encoding="utf-8") as f:
