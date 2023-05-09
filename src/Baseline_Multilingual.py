@@ -12,7 +12,7 @@ import json
 class SemanticDataset(Dataset):
  
     def __init__(self, file_name, tokenizer, include_extras=False, max_len=512):
-        df = pd.read_csv(file_name, sep="\t", names=["text", "label", "sem_type", "language"])
+        df = pd.read_csv(file_name, sep="\t")
         self.include_extras = include_extras
         text = list(df["text"].values)
         labels = list(df["label"].values)
@@ -28,7 +28,7 @@ class SemanticDataset(Dataset):
 
     def __getitem__(self,idx):
         if self.include_extras:
-            return self.text_ids[idx], self.label_ids[idx], {"sem_type":self.sem_types[idx], "language":self.languages[idx]}
+            return self.text_ids[idx], self.label_ids[idx], self.sem_types[idx], self.languages[idx]
         else:
             return self.text_ids[idx], self.label_ids[idx]
 
@@ -174,26 +174,25 @@ def evaluate_fn(args):
     predictions = []
     true_labels = []
 
-    outputs = []
+    
     with open('predictions.json', 'w') as f:
         # save the predictions to a file
-        for input_ids, label_ids, extras in pbar:
+        for input_ids, label_ids, sem_types, languages in pbar:
             texts = tokenizer.batch_decode(input_ids, skip_special_tokens=True)
             labels = tokenizer.batch_decode(label_ids, skip_special_tokens=True)
             input_ids = input_ids.to(device)
             label_ids = label_ids.to(device)
-            generated_ids = model.generate(input_ids, max_length=2048)
-            print(extras)
+            generated_ids = model.generate(input_ids, max_length=512, num_beams=5)
 
             generated_texts = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
-            
-            for text, label, generated_text, extras in zip(texts, labels, generated_texts, extras):
+            outputs = []
+            for text, label, generated_text, sem_type, language in zip(texts, labels, generated_texts, sem_types, languages):
                 outputs.append({
                     'text': text,
                     'label': label,
                     'generated': generated_text,
-                    'sem_type': extras["sem_type"],
-                    'language': extras["language"]
+                    'sem_type': sem_type,
+                    'language': language
                 })
 
                 predictions.append(generated_text)
