@@ -21,7 +21,10 @@ Evaluating the multilingual model:
   ```
   python Baseline_Multilingual.py evaluate --cuda --test_dir ../data/gen_translated.tsv --checkpoint_dir ../models/baseline-translated/ --batch_size 32
   ```
-
+Training Our T5 Dangle (Does not function)
+  ```
+  python Dangle.py train --cuda --train_dir ../data/train.tsv --val_dir ../data/dev.tsv --test_dir ../data/test.tsv --T5_modelname t5-base --save_dir ../models/dangle/ --epochs 200 --batch_size 64 --lr 0.0002
+  ```
   
 The data directory contains the data on which our parsers were trained and evaluated.
   - The translated data sets are very large because they contain the translations of each sample in every language.
