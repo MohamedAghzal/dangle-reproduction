@@ -1,7 +1,7 @@
 Here is the code which accompanies our NLP Project:
 
 The src directory includes the code which we used to produce the T5 semantic parser as well as code for translating the data.
-  - We attempted to reproduce the process of dangle but we were unable to get it working.
+  - We attempted to reproduce the process of dangle but we were unable to get it working - Dangle's code for running RoBERTa does not work, either.
   - The Baseline.py and Baseline_Multilingual.py implement our standard T5 semantic parser and a multlingual variant.
   - Below are some command lines to use this code:
 
@@ -21,7 +21,7 @@ Evaluating the multilingual model:
   ```
   python Baseline_Multilingual.py evaluate --cuda --test_dir ../data/gen_translated.tsv --checkpoint_dir ../models/baseline-translated/ --batch_size 32
   ```
-Training Our T5 Dangle (Does not function)
+Training Our T5 Dangle (Buggy/broken)
   ```
   python Dangle.py train --cuda --train_dir ../data/train.tsv --val_dir ../data/dev.tsv --test_dir ../data/test.tsv --T5_modelname t5-base --save_dir ../models/dangle/ --epochs 200 --batch_size 64 --lr 0.0002
   ```
